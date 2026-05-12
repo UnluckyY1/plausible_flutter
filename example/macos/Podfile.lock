@@ -1,0 +1,41 @@
+PODS:
+  - connectivity_plus (0.0.1):
+    - FlutterMacOS
+  - cupertino_http (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - device_info_plus (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - package_info_plus (0.0.1):
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - connectivity_plus (from `Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos`)
+  - cupertino_http (from `Flutter/ephemeral/.symlinks/plugins/cupertino_http/darwin`)
+  - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
+
+EXTERNAL SOURCES:
+  connectivity_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos
+  cupertino_http:
+    :path: Flutter/ephemeral/.symlinks/plugins/cupertino_http/darwin
+  device_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  package_info_plus:
+    :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
+
+SPEC CHECKSUMS:
+  connectivity_plus: 0a976dfd033b59192912fa3c6c7b54aab5093802
+  cupertino_http: 947a233f40cfea55167a49f2facc18434ea117ba
+  device_info_plus: 1b14eed9bf95428983aed283a8d51cce3d8c4215
+  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  package_info_plus: 12f1c5c2cfe8727ca46cbd0b26677728972d9a5b
+
+PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
+
+COCOAPODS: 1.16.2
