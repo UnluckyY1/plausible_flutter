@@ -160,7 +160,7 @@ class Plausible {
         : await _safeDetect(includeDeviceModel: !disableAutoDeviceProps);
     final mergedProps = <String, String>{
       ...detected.defaultProps,
-      if (defaultProps != null) ...defaultProps,
+      ...?defaultProps,
     };
 
     final config = PlausibleConfig(
