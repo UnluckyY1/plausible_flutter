@@ -9,9 +9,6 @@ Future<PlausiblePlatformInfo> detectPlatformInfo({
   final appVersion = pkg.version.isEmpty ? '0.0.0' : pkg.version;
   return PlausiblePlatformInfo(
     userAgent: null,
-    defaultProps: {
-      'app_version': appVersion,
-      'platform': 'web',
-    },
+    defaultProps: {'app_version': appVersion, 'platform': 'web'},
   );
 }

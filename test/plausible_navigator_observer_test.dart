@@ -65,22 +65,24 @@ void main() {
     expect(adapter.posts, isEmpty);
   });
 
-  test('default observer tracks named pushes once (no double-count on pop)',
-      () async {
-    final observer = PlausibleNavigatorObserver();
-    final home = _route('/home');
-    final detail = _route('/detail');
+  test(
+    'default observer tracks named pushes once (no double-count on pop)',
+    () async {
+      final observer = PlausibleNavigatorObserver();
+      final home = _route('/home');
+      final detail = _route('/detail');
 
-    observer.didPush(home, null);
-    observer.didPush(detail, home);
-    observer.didPop(detail, home);
-    await _settle();
+      observer.didPush(home, null);
+      observer.didPush(detail, home);
+      observer.didPop(detail, home);
+      await _settle();
 
-    expect(adapter.posts.length, 2);
-    expect(adapter.posts[0]['url'], 'https://d.example.com/home');
-    expect(adapter.posts[1]['url'], 'https://d.example.com/detail');
-    expect(adapter.posts[1]['referrer'], 'https://d.example.com/home');
-  });
+      expect(adapter.posts.length, 2);
+      expect(adapter.posts[0]['url'], 'https://d.example.com/home');
+      expect(adapter.posts[1]['url'], 'https://d.example.com/detail');
+      expect(adapter.posts[1]['referrer'], 'https://d.example.com/home');
+    },
+  );
 
   test('replace tracks the new route with previous as referrer', () async {
     final observer = PlausibleNavigatorObserver();
@@ -92,10 +94,8 @@ void main() {
     expect(adapter.posts.single['referrer'], 'https://d.example.com/a');
   });
 
-  test(
-      'default observer (respectGlobalFlag: true) no-ops when '
-      'enableAutoPageviews is false',
-      () async {
+  test('default observer (respectGlobalFlag: true) no-ops when '
+      'enableAutoPageviews is false', () async {
     // Re-init with the flag flipped off — the default singleton observer
     // must NOT fire pageviews under this configuration.
     await Plausible.reset();
@@ -126,11 +126,13 @@ void main() {
   });
 
   test('custom filter can rename and skip routes', () async {
-    final observer = PlausibleNavigatorObserver(filter: (route) {
-      final name = route.settings.name;
-      if (name == '/secret') return null;
-      return name == null ? null : 'screen:$name';
-    });
+    final observer = PlausibleNavigatorObserver(
+      filter: (route) {
+        final name = route.settings.name;
+        if (name == '/secret') return null;
+        return name == null ? null : 'screen:$name';
+      },
+    );
     observer.didPush(_route('/home'), null);
     observer.didPush(_route('/secret'), _route('/home'));
     await _settle();

@@ -98,16 +98,17 @@ void main() {
       );
     }
 
-    test('enabled: false short-circuits — adapter never receives a request',
-        () async {
-      await initPlausible(enabled: false);
-      final r = await Plausible.instance.trackEvent('demo');
-      expect(r, PlausibleSendResult.disabled);
-      expect(adapter.posts, isEmpty);
-    });
+    test(
+      'enabled: false short-circuits — adapter never receives a request',
+      () async {
+        await initPlausible(enabled: false);
+        final r = await Plausible.instance.trackEvent('demo');
+        expect(r, PlausibleSendResult.disabled);
+        expect(adapter.posts, isEmpty);
+      },
+    );
 
-    test('setEnabled(false) at runtime suppresses subsequent events',
-        () async {
+    test('setEnabled(false) at runtime suppresses subsequent events', () async {
       await initPlausible();
       await Plausible.instance.trackEvent('first');
       Plausible.instance.setEnabled(false);
@@ -115,32 +116,38 @@ void main() {
       Plausible.instance.setEnabled(true);
       await Plausible.instance.trackEvent('third');
 
-      expect(adapter.posts.map((p) => p['name']).toList(),
-          ['first', 'third']);
-    });
-
-    test('Hive open failure does not crash init — events become no-ops',
-        () async {
-      await initPlausible(boxOpener: () async => throw StateError('disk full'));
-
-      final r = await Plausible.instance.trackEvent('demo');
-      // Live network send still happens — adapter returns 202 by default.
-      expect(adapter.posts.single['name'], 'demo');
-      expect(r, PlausibleSendResult.success);
+      expect(adapter.posts.map((p) => p['name']).toList(), ['first', 'third']);
     });
 
     test(
-        'Hive open failure: transient send is reported as dropped, not queued',
-        () async {
-      adapter.responder = (_) => _resp(500, 'fail');
-      await initPlausible(boxOpener: () async => throw StateError('disk full'));
+      'Hive open failure does not crash init — events become no-ops',
+      () async {
+        await initPlausible(
+          boxOpener: () async => throw StateError('disk full'),
+        );
 
-      final r = await Plausible.instance.trackEvent('demo');
-      // No persistence available, so the event is genuinely lost — the
-      // public contract for `queued` is "persisted and will be retried", so
-      // we must report `dropped` here, not lie.
-      expect(r, PlausibleSendResult.dropped);
-    });
+        final r = await Plausible.instance.trackEvent('demo');
+        // Live network send still happens — adapter returns 202 by default.
+        expect(adapter.posts.single['name'], 'demo');
+        expect(r, PlausibleSendResult.success);
+      },
+    );
+
+    test(
+      'Hive open failure: transient send is reported as dropped, not queued',
+      () async {
+        adapter.responder = (_) => _resp(500, 'fail');
+        await initPlausible(
+          boxOpener: () async => throw StateError('disk full'),
+        );
+
+        final r = await Plausible.instance.trackEvent('demo');
+        // No persistence available, so the event is genuinely lost — the
+        // public contract for `queued` is "persisted and will be retried", so
+        // we must report `dropped` here, not lie.
+        expect(r, PlausibleSendResult.dropped);
+      },
+    );
 
     test('absolute URL passes through _buildUrl unchanged', () async {
       await initPlausible();
@@ -154,25 +161,27 @@ void main() {
       expect(adapter.posts.single['url'], 'https://d.example.com/contracts');
     });
 
-    test('empty xForwardedFor / userAgent do not produce empty headers',
-        () async {
-      // Re-init with explicit empty strings — both should be omitted, not
-      // sent as empty-value headers.
-      await Plausible.init(
-        domain: 'd.example.com',
-        apiHost: 'https://h.example.com',
-        userAgent: '',
-        xForwardedFor: '',
-        dio: dio,
-        skipPlatformDetection: true,
-        connectivity: _FakeConnectivity(),
-        retryInterval: Duration.zero,
-        boxOpener: openFreshBox,
-      );
-      await Plausible.instance.trackEvent('demo');
-      expect(adapter.headers.last.containsKey('User-Agent'), isFalse);
-      expect(adapter.headers.last.containsKey('X-Forwarded-For'), isFalse);
-    });
+    test(
+      'empty xForwardedFor / userAgent do not produce empty headers',
+      () async {
+        // Re-init with explicit empty strings — both should be omitted, not
+        // sent as empty-value headers.
+        await Plausible.init(
+          domain: 'd.example.com',
+          apiHost: 'https://h.example.com',
+          userAgent: '',
+          xForwardedFor: '',
+          dio: dio,
+          skipPlatformDetection: true,
+          connectivity: _FakeConnectivity(),
+          retryInterval: Duration.zero,
+          boxOpener: openFreshBox,
+        );
+        await Plausible.instance.trackEvent('demo');
+        expect(adapter.headers.last.containsKey('User-Agent'), isFalse);
+        expect(adapter.headers.last.containsKey('X-Forwarded-For'), isFalse);
+      },
+    );
 
     test('empty referrer string is dropped from the payload', () async {
       await initPlausible();
@@ -181,18 +190,20 @@ void main() {
       expect(adapter.posts.single.containsKey('referrer'), isFalse);
     });
 
-    test('caller-mutated props map does not leak into the sent payload',
-        () async {
-      await initPlausible();
-      final props = <String, String>{'kind': 'before-mutation'};
-      // Start the send but mutate the caller's map immediately, before the
-      // send future resolves. mergeDefaultProps must have copied synchronously.
-      final sendFuture = Plausible.instance.trackEvent('demo', props: props);
-      props['kind'] = 'AFTER-MUTATION';
-      await sendFuture;
-      final captured = adapter.posts.single['props'] as Map;
-      expect(captured['kind'], 'before-mutation');
-    });
+    test(
+      'caller-mutated props map does not leak into the sent payload',
+      () async {
+        await initPlausible();
+        final props = <String, String>{'kind': 'before-mutation'};
+        // Start the send but mutate the caller's map immediately, before the
+        // send future resolves. mergeDefaultProps must have copied synchronously.
+        final sendFuture = Plausible.instance.trackEvent('demo', props: props);
+        props['kind'] = 'AFTER-MUTATION';
+        await sendFuture;
+        final captured = adapter.posts.single['props'] as Map;
+        expect(captured['kind'], 'before-mutation');
+      },
+    );
   });
 
   group('PlausibleQueue lifecycle / retry triggers', () {
@@ -258,8 +269,9 @@ void main() {
     test('AppLifecycleState.resumed drains the queue', () async {
       await makeQueue();
       adapter.responder = (_) => _resp(500, 'fail');
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'pageview', url: 'https://d.example.com/x'));
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'),
+      );
       expect(box.length, 1);
 
       adapter.responder = (_) => _resp(202, 'ok');
@@ -273,8 +285,9 @@ void main() {
     test('AppLifecycleState.paused does not drain', () async {
       await makeQueue();
       adapter.responder = (_) => _resp(500, 'fail');
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'pageview', url: 'https://d.example.com/x'));
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'),
+      );
 
       adapter.responder = (_) => _resp(202, 'ok');
       queue.didChangeAppLifecycleState(AppLifecycleState.paused);
@@ -288,13 +301,16 @@ void main() {
       adapter.responder = (_) => _resp(500, 'fail');
 
       // First call: queue empty → tries network, persists on failure.
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'a', url: 'https://d.example.com/x'));
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'a', url: 'https://d.example.com/x'),
+      );
       // Second call: queue non-empty → short-circuits to persist (no leapfrog).
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'b', url: 'https://d.example.com/x'));
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'c', url: 'https://d.example.com/x'));
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'b', url: 'https://d.example.com/x'),
+      );
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'c', url: 'https://d.example.com/x'),
+      );
 
       expect(box.length, 3);
 
@@ -305,127 +321,147 @@ void main() {
       expect(adapter.posts.map((p) => p['name']).toList(), ['a', 'b', 'c']);
     });
 
-    test('concurrent enqueueOrSend calls are serialized (FIFO under race)',
-        () async {
-      await makeQueue();
-      adapter.responder = (_) => _resp(500, 'fail');
+    test(
+      'concurrent enqueueOrSend calls are serialized (FIFO under race)',
+      () async {
+        await makeQueue();
+        adapter.responder = (_) => _resp(500, 'fail');
 
-      // Fire three calls without awaiting — the mutex must serialize them so
-      // they persist in invocation order, not network-response order.
-      final futures = [
-        queue.enqueueOrSend(PlausibleEvent(
-            name: 'a', url: 'https://d.example.com/x')),
-        queue.enqueueOrSend(PlausibleEvent(
-            name: 'b', url: 'https://d.example.com/x')),
-        queue.enqueueOrSend(PlausibleEvent(
-            name: 'c', url: 'https://d.example.com/x')),
-      ];
-      await Future.wait(futures);
+        // Fire three calls without awaiting — the mutex must serialize them so
+        // they persist in invocation order, not network-response order.
+        final futures = [
+          queue.enqueueOrSend(
+            PlausibleEvent(name: 'a', url: 'https://d.example.com/x'),
+          ),
+          queue.enqueueOrSend(
+            PlausibleEvent(name: 'b', url: 'https://d.example.com/x'),
+          ),
+          queue.enqueueOrSend(
+            PlausibleEvent(name: 'c', url: 'https://d.example.com/x'),
+          ),
+        ];
+        await Future.wait(futures);
 
-      adapter.responder = (_) => _resp(202, 'ok');
-      adapter.posts.clear();
-      await queue.drain();
-      expect(adapter.posts.map((p) => p['name']).toList(), ['a', 'b', 'c']);
-    });
+        adapter.responder = (_) => _resp(202, 'ok');
+        adapter.posts.clear();
+        await queue.drain();
+        expect(adapter.posts.map((p) => p['name']).toList(), ['a', 'b', 'c']);
+      },
+    );
 
-    test('FIFO survives a re-entrant call from a prior send completion',
-        () async {
-      // Scenario the chained-mutex must defend: A holds the lock, B is queued
-      // behind A. When A finishes, its caller (synchronously, before B's
-      // microtask runs) fires C. With a naive while-await mutex C cuts ahead
-      // of B; with chained promises it appends behind B.
-      await makeQueue();
-      adapter.responder = (_) => _resp(500, 'fail');
+    test(
+      'FIFO survives a re-entrant call from a prior send completion',
+      () async {
+        // Scenario the chained-mutex must defend: A holds the lock, B is queued
+        // behind A. When A finishes, its caller (synchronously, before B's
+        // microtask runs) fires C. With a naive while-await mutex C cuts ahead
+        // of B; with chained promises it appends behind B.
+        await makeQueue();
+        adapter.responder = (_) => _resp(500, 'fail');
 
-      late final Future<PlausibleSendResult> aFuture;
-      late final Future<PlausibleSendResult> bFuture;
-      Future<PlausibleSendResult>? cFuture;
-      aFuture = queue.enqueueOrSend(PlausibleEvent(
-          name: 'a', url: 'https://d.example.com/x'));
-      bFuture = queue.enqueueOrSend(PlausibleEvent(
-          name: 'b', url: 'https://d.example.com/x'));
-      // Schedule C *synchronously* in A's completion continuation. Because
-      // the chained mutex captured `_sendLock` before any await, C will
-      // append after B, not jump ahead.
-      // ignore: unawaited_futures
-      aFuture.then((_) {
-        cFuture = queue.enqueueOrSend(PlausibleEvent(
-            name: 'c', url: 'https://d.example.com/x'));
-      });
-      await Future.wait([aFuture, bFuture]);
-      // Wait for C if it was scheduled.
-      if (cFuture != null) await cFuture;
+        late final Future<PlausibleSendResult> aFuture;
+        late final Future<PlausibleSendResult> bFuture;
+        Future<PlausibleSendResult>? cFuture;
+        aFuture = queue.enqueueOrSend(
+          PlausibleEvent(name: 'a', url: 'https://d.example.com/x'),
+        );
+        bFuture = queue.enqueueOrSend(
+          PlausibleEvent(name: 'b', url: 'https://d.example.com/x'),
+        );
+        // Schedule C *synchronously* in A's completion continuation. Because
+        // the chained mutex captured `_sendLock` before any await, C will
+        // append after B, not jump ahead.
+        // ignore: unawaited_futures
+        aFuture.then((_) {
+          cFuture = queue.enqueueOrSend(
+            PlausibleEvent(name: 'c', url: 'https://d.example.com/x'),
+          );
+        });
+        await Future.wait([aFuture, bFuture]);
+        // Wait for C if it was scheduled.
+        if (cFuture != null) await cFuture;
 
-      adapter.responder = (_) => _resp(202, 'ok');
-      adapter.posts.clear();
-      await queue.drain();
-      expect(adapter.posts.map((p) => p['name']).toList(), ['a', 'b', 'c']);
-    });
+        adapter.responder = (_) => _resp(202, 'ok');
+        adapter.posts.clear();
+        await queue.drain();
+        expect(adapter.posts.map((p) => p['name']).toList(), ['a', 'b', 'c']);
+      },
+    );
 
-    test('dispose() cancels in-flight Dio requests and returns promptly',
-        () async {
-      // Swap in an adapter that hangs forever unless its cancel token fires.
-      // Without the CancelToken plumbing, dispose would block on the
-      // configured timeout (10s); with it, this should be ~instant.
-      final hangingAdapter = _HangingAdapter();
-      adapter = _RecordingAdapter(); // ignored; we override dio's adapter
-      dio = Dio()..httpClientAdapter = hangingAdapter;
-      connectivity = _FakeConnectivity();
-      client = PlausibleClient(
-        config: config,
-        logger: PlausibleLogger(),
-        dio: dio,
-      );
-      queue = PlausibleQueue(
-        config: config,
-        client: client,
-        logger: PlausibleLogger(),
-        connectivity: connectivity,
-        openBox: () async {
-          box = await openFreshBox();
-          return box;
-        },
-        retryInterval: Duration.zero,
-      );
-      await queue.init();
+    test(
+      'dispose() cancels in-flight Dio requests and returns promptly',
+      () async {
+        // Swap in an adapter that hangs forever unless its cancel token fires.
+        // Without the CancelToken plumbing, dispose would block on the
+        // configured timeout (10s); with it, this should be ~instant.
+        final hangingAdapter = _HangingAdapter();
+        adapter = _RecordingAdapter(); // ignored; we override dio's adapter
+        dio = Dio()..httpClientAdapter = hangingAdapter;
+        connectivity = _FakeConnectivity();
+        client = PlausibleClient(
+          config: config,
+          logger: PlausibleLogger(),
+          dio: dio,
+        );
+        queue = PlausibleQueue(
+          config: config,
+          client: client,
+          logger: PlausibleLogger(),
+          connectivity: connectivity,
+          openBox: () async {
+            box = await openFreshBox();
+            return box;
+          },
+          retryInterval: Duration.zero,
+        );
+        await queue.init();
 
-      // Kick off a send that will hang on the network until cancellation.
-      // ignore: unawaited_futures
-      queue.enqueueOrSend(
-          PlausibleEvent(name: 'demo', url: 'https://d.example.com/x'));
-      // Yield so the adapter's fetch() runs and parks on cancelToken.whenCancel.
-      await Future<void>.value();
-      await Future<void>.value();
+        // Kick off a send that will hang on the network until cancellation.
+        // ignore: unawaited_futures
+        queue.enqueueOrSend(
+          PlausibleEvent(name: 'demo', url: 'https://d.example.com/x'),
+        );
+        // Yield so the adapter's fetch() runs and parks on cancelToken.whenCancel.
+        await Future<void>.value();
+        await Future<void>.value();
 
-      final stopwatch = Stopwatch()..start();
-      await queue.dispose();
-      stopwatch.stop();
-      // The real failure mode without a CancelToken is dispose blocking on
-      // the full request timeout (`config.timeout`, default 10s). 2s is
-      // comfortable headroom for a CI runner under contention while still
-      // catching the regression.
-      expect(stopwatch.elapsedMilliseconds, lessThan(2000));
-    });
+        final stopwatch = Stopwatch()..start();
+        await queue.dispose();
+        stopwatch.stop();
+        // The real failure mode without a CancelToken is dispose blocking on
+        // the full request timeout (`config.timeout`, default 10s). 2s is
+        // comfortable headroom for a CI runner under contention while still
+        // catching the regression.
+        expect(stopwatch.elapsedMilliseconds, lessThan(2000));
+      },
+    );
 
     test('corrupt entry doesn\'t block valid entries after it', () async {
       await makeQueue();
       adapter.responder = (_) => _resp(202, 'ok');
 
       // Insert: valid, corrupt, valid — drain should send the two valids.
-      await box.add(jsonEncode(PlausibleEvent(
-        name: 'before',
-        url: 'https://d.example.com/x',
-      ).toJson()));
+      await box.add(
+        jsonEncode(
+          PlausibleEvent(
+            name: 'before',
+            url: 'https://d.example.com/x',
+          ).toJson(),
+        ),
+      );
       await box.add('totally not json');
-      await box.add(jsonEncode(PlausibleEvent(
-        name: 'after',
-        url: 'https://d.example.com/x',
-      ).toJson()));
+      await box.add(
+        jsonEncode(
+          PlausibleEvent(
+            name: 'after',
+            url: 'https://d.example.com/x',
+          ).toJson(),
+        ),
+      );
 
       await queue.drain();
       expect(box.length, 0);
-      expect(adapter.posts.map((p) => p['name']).toList(),
-          ['before', 'after']);
+      expect(adapter.posts.map((p) => p['name']).toList(), ['before', 'after']);
     });
   });
 }
@@ -460,8 +496,8 @@ class _HangingAdapter implements HttpClientAdapter {
 class _RecordingAdapter implements HttpClientAdapter {
   final List<Map<String, dynamic>> posts = [];
   final List<Map<String, List<String>>> headers = [];
-  ResponseBody Function(RequestOptions options) responder =
-      (_) => _resp(202, 'ok');
+  ResponseBody Function(RequestOptions options) responder = (_) =>
+      _resp(202, 'ok');
 
   @override
   Future<ResponseBody> fetch(
@@ -472,8 +508,12 @@ class _RecordingAdapter implements HttpClientAdapter {
     if (options.data is Map) {
       posts.add(Map<String, dynamic>.from(options.data as Map));
     }
-    headers.add(options.headers.map((k, v) =>
-        MapEntry(k, v is List ? v.cast<String>() : <String>[v.toString()])));
+    headers.add(
+      options.headers.map(
+        (k, v) =>
+            MapEntry(k, v is List ? v.cast<String>() : <String>[v.toString()]),
+      ),
+    );
     return responder(options);
   }
 

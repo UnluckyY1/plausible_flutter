@@ -10,7 +10,8 @@ Future<PlausiblePlatformInfo> detectPlatformInfo({
 }) async {
   final pkg = await PackageInfo.fromPlatform();
   final appName = PlausiblePlatformInfo.sanitize(
-      pkg.appName.isEmpty ? 'FlutterApp' : pkg.appName);
+    pkg.appName.isEmpty ? 'FlutterApp' : pkg.appName,
+  );
   final appVersion = pkg.version.isEmpty ? '0.0.0' : pkg.version;
   final info = DeviceInfoPlugin();
 
@@ -93,9 +94,6 @@ Future<PlausiblePlatformInfo> detectPlatformInfo({
 
   return PlausiblePlatformInfo(
     userAgent: '$appName/$appVersion',
-    defaultProps: {
-      'app_version': appVersion,
-      'platform': 'unknown',
-    },
+    defaultProps: {'app_version': appVersion, 'platform': 'unknown'},
   );
 }

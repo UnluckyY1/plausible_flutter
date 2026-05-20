@@ -1,7 +1,8 @@
 import 'package:meta/meta.dart';
 
 import 'platform_info_io.dart'
-    if (dart.library.js_interop) 'platform_info_web.dart' as impl;
+    if (dart.library.js_interop) 'platform_info_web.dart'
+    as impl;
 
 /// Auto-detected platform metadata used to build a Plausible-friendly
 /// User-Agent and a set of default props attached to every event.
@@ -27,8 +28,7 @@ class PlausiblePlatformInfo {
 
   static Future<PlausiblePlatformInfo> detect({
     bool includeDeviceModel = true,
-  }) =>
-      impl.detectPlatformInfo(includeDeviceModel: includeDeviceModel);
+  }) => impl.detectPlatformInfo(includeDeviceModel: includeDeviceModel);
 
   /// Strips characters that would break a User-Agent product token.
   static String sanitize(String s) =>

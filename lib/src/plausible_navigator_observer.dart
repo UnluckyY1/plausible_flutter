@@ -77,8 +77,7 @@ class PlausibleNavigatorObserver extends NavigatorObserver {
   void _track(Route<dynamic>? route, Route<dynamic>? previousRoute) {
     if (route == null) return;
     if (!Plausible.isInitialized) return;
-    if (respectGlobalFlag &&
-        !Plausible.instance.config.enableAutoPageviews) {
+    if (respectGlobalFlag && !Plausible.instance.config.enableAutoPageviews) {
       return;
     }
     final name = filter(route);

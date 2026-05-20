@@ -42,26 +42,28 @@ class PlausibleEvent {
   /// an event. The local timestamp is kept on the model only for FIFO queue
   /// ordering and round-tripping through [toJson]/[fromJson].
   Map<String, dynamic> toApiPayload(String domain) => {
-        'domain': domain,
-        'name': name,
-        'url': url,
-        if (referrer != null) 'referrer': referrer,
-        if (props != null && props!.isNotEmpty) 'props': props,
-      };
+    'domain': domain,
+    'name': name,
+    'url': url,
+    if (referrer != null) 'referrer': referrer,
+    if (props != null && props!.isNotEmpty) 'props': props,
+  };
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'url': url,
-        if (referrer != null) 'referrer': referrer,
-        if (props != null && props!.isNotEmpty) 'props': props,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'name': name,
+    'url': url,
+    if (referrer != null) 'referrer': referrer,
+    if (props != null && props!.isNotEmpty) 'props': props,
+    'timestamp': timestamp.toIso8601String(),
+  };
 
   factory PlausibleEvent.fromJson(Map<String, dynamic> json) => PlausibleEvent(
-        name: json['name'] as String,
-        url: json['url'] as String,
-        referrer: json['referrer'] as String?,
-        props: (json['props'] as Map?)?.map((k, v) => MapEntry(k as String, v as String)),
-        timestamp: DateTime.parse(json['timestamp'] as String),
-      );
+    name: json['name'] as String,
+    url: json['url'] as String,
+    referrer: json['referrer'] as String?,
+    props: (json['props'] as Map?)?.map(
+      (k, v) => MapEntry(k as String, v as String),
+    ),
+    timestamp: DateTime.parse(json['timestamp'] as String),
+  );
 }

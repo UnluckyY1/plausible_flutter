@@ -37,7 +37,8 @@ class Plausible {
     final i = _instance;
     if (i == null) {
       throw StateError(
-          'Plausible.init() must be called before accessing Plausible.instance');
+        'Plausible.init() must be called before accessing Plausible.instance',
+      );
     }
     return i;
   }
@@ -80,9 +81,9 @@ class Plausible {
   ///
   /// The returned observer ignores the `enableAutoPageviews` flag — if you
   /// construct one explicitly, you've opted in.
-  static PlausibleNavigatorObserver createNavigatorObserver(
-          {PlausibleRouteFilter? filter}) =>
-      PlausibleNavigatorObserver(filter: filter);
+  static PlausibleNavigatorObserver createNavigatorObserver({
+    PlausibleRouteFilter? filter,
+  }) => PlausibleNavigatorObserver(filter: filter);
 
   final PlausibleConfig config;
   final PlausibleQueue _queue;
@@ -93,9 +94,9 @@ class Plausible {
     required this.config,
     required PlausibleQueue queue,
     required PlausibleLogger logger,
-  })  : _queue = queue,
-        _logger = logger,
-        _enabled = config.enabled;
+  }) : _queue = queue,
+       _logger = logger,
+       _enabled = config.enabled;
 
   /// Whether tracking is currently active. Starts at [PlausibleConfig.enabled]
   /// and can be flipped at runtime via [setEnabled].
@@ -175,10 +176,12 @@ class Plausible {
       timeout: timeout,
       maxQueueSize: maxQueueSize,
     );
-    final plausibleLogger =
-        PlausibleLogger(enabled: debug, logger: logger);
-    final client =
-        PlausibleClient(config: config, logger: plausibleLogger, dio: dio);
+    final plausibleLogger = PlausibleLogger(enabled: debug, logger: logger);
+    final client = PlausibleClient(
+      config: config,
+      logger: plausibleLogger,
+      dio: dio,
+    );
     final queue = PlausibleQueue(
       config: config,
       client: client,
@@ -203,7 +206,8 @@ class Plausible {
   }) async {
     try {
       return await PlausiblePlatformInfo.detect(
-          includeDeviceModel: includeDeviceModel);
+        includeDeviceModel: includeDeviceModel,
+      );
     } catch (_) {
       // Platform channels unavailable (e.g. tests) — fall back to empty.
       return const PlausiblePlatformInfo(userAgent: null, defaultProps: {});
@@ -226,12 +230,14 @@ class Plausible {
     String? referrer,
     Map<String, String>? props,
   }) {
-    return _send(PlausibleEvent(
-      name: 'pageview',
-      url: _buildUrl(path),
-      referrer: _normalizeReferrer(referrer),
-      props: props,
-    ));
+    return _send(
+      PlausibleEvent(
+        name: 'pageview',
+        url: _buildUrl(path),
+        referrer: _normalizeReferrer(referrer),
+        props: props,
+      ),
+    );
   }
 
   /// Track a custom event.
@@ -249,11 +255,9 @@ class Plausible {
     String? path,
     Map<String, String>? props,
   }) {
-    return _send(PlausibleEvent(
-      name: name,
-      url: _buildUrl(path ?? '/'),
-      props: props,
-    ));
+    return _send(
+      PlausibleEvent(name: name, url: _buildUrl(path ?? '/'), props: props),
+    );
   }
 
   Future<PlausibleSendResult> _send(PlausibleEvent event) async {
@@ -261,8 +265,7 @@ class Plausible {
       _logger.debug('disabled — skipped ${event.name}');
       return PlausibleSendResult.disabled;
     }
-    return _queue
-        .enqueueOrSend(mergeDefaultProps(event, config.defaultProps));
+    return _queue.enqueueOrSend(mergeDefaultProps(event, config.defaultProps));
   }
 
   /// Merges per-event props onto the configured defaults. Per-event keys win

@@ -45,6 +45,7 @@ class PlausibleQueue with WidgetsBindingObserver {
   Timer? _retryTimer;
   Future<void>? _drainInFlight;
   Future<void>? _sendLock;
+
   /// Active per-request cancel tokens. We use a token per send (rather than
   /// reusing one) because Dio registers a `whenCancel.then(...)` listener per
   /// request that never gets released until the token fires — reusing the
@@ -63,12 +64,12 @@ class PlausibleQueue with WidgetsBindingObserver {
     Connectivity? connectivity,
     PlausibleBoxOpener? openBox,
     Duration retryInterval = const Duration(minutes: 5),
-  })  : _config = config,
-        _client = client,
-        _logger = logger,
-        _connectivity = connectivity ?? Connectivity(),
-        _openBox = openBox ?? _defaultOpenBox,
-        _retryInterval = retryInterval;
+  }) : _config = config,
+       _client = client,
+       _logger = logger,
+       _connectivity = connectivity ?? Connectivity(),
+       _openBox = openBox ?? _defaultOpenBox,
+       _retryInterval = retryInterval;
 
   Future<void> init() async {
     await _ensureBox();
@@ -123,8 +124,9 @@ class PlausibleQueue with WidgetsBindingObserver {
       _boxOpenAttempted = true;
       if (_openFailures >= _maxOpenFailures && _retryTimer != null) {
         _logger.warn(
-            'queue stayed unopenable across $_openFailures attempts — '
-            'stopping periodic retry');
+          'queue stayed unopenable across $_openFailures attempts — '
+          'stopping periodic retry',
+        );
         _retryTimer!.cancel();
         _retryTimer = null;
       }
@@ -160,7 +162,9 @@ class PlausibleQueue with WidgetsBindingObserver {
       if (previous != null) {
         try {
           await previous;
-        } catch (_) {/* prior call's failure shouldn't poison ours */}
+        } catch (_) {
+          /* prior call's failure shouldn't poison ours */
+        }
       }
       if (_disposed) return PlausibleSendResult.disabled;
       return await _enqueueOrSendLocked(event);
@@ -248,8 +252,9 @@ class PlausibleQueue with WidgetsBindingObserver {
         if (raw == null) continue;
         final PlausibleEvent event;
         try {
-          event =
-              PlausibleEvent.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+          event = PlausibleEvent.fromJson(
+            jsonDecode(raw) as Map<String, dynamic>,
+          );
         } catch (e) {
           // Corrupt entry — drop it rather than getting stuck forever.
           _logger.warn('drop corrupt queue entry $key', e);

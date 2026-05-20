@@ -60,16 +60,18 @@ class PlausibleClient {
     required PlausibleConfig config,
     required PlausibleLogger logger,
     Dio? dio,
-  })  : _config = config,
-        _logger = logger,
-        _dio = dio ?? _buildDefaultDio(config);
+  }) : _config = config,
+       _logger = logger,
+       _dio = dio ?? _buildDefaultDio(config);
 
   static Dio _buildDefaultDio(PlausibleConfig config) {
-    final dio = Dio(BaseOptions(
-      connectTimeout: config.timeout,
-      receiveTimeout: config.timeout,
-      sendTimeout: config.timeout,
-    ));
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: config.timeout,
+        receiveTimeout: config.timeout,
+        sendTimeout: config.timeout,
+      ),
+    );
     applyNativeAdapter(dio);
     return dio;
   }
@@ -122,7 +124,10 @@ class PlausibleClient {
   }
 
   PlausibleClientOutcome _classify(
-      PlausibleEvent event, int? status, Object? body) {
+    PlausibleEvent event,
+    int? status,
+    Object? body,
+  ) {
     if (status == null) {
       _logger.warn('retry later ${event.name}: no status');
       return PlausibleClientOutcome.transient;
@@ -139,4 +144,3 @@ class PlausibleClient {
     return PlausibleClientOutcome.transient;
   }
 }
-

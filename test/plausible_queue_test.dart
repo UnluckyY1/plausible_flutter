@@ -101,7 +101,8 @@ void main() {
     test('successful send leaves the queue empty', () async {
       adapter.responder = (_) => _resp(202, 'ok');
       final result = await queue.enqueueOrSend(
-          PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'));
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'),
+      );
       expect(result, PlausibleSendResult.success);
       expect(box.length, 0);
     });
@@ -109,7 +110,8 @@ void main() {
     test('permanent failure (400) is dropped, not queued', () async {
       adapter.responder = (_) => _resp(400, 'bad');
       final result = await queue.enqueueOrSend(
-          PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'));
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'),
+      );
       expect(result, PlausibleSendResult.dropped);
       expect(box.length, 0);
     });
@@ -117,7 +119,8 @@ void main() {
     test('transient failure (500) persists for retry', () async {
       adapter.responder = (_) => _resp(500, 'fail');
       final result = await queue.enqueueOrSend(
-          PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'));
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'),
+      );
       expect(result, PlausibleSendResult.queued);
       expect(box.length, 1);
     });
@@ -125,25 +128,30 @@ void main() {
     test('at-cap eviction drops the oldest event FIFO', () async {
       adapter.responder = (_) => _resp(500, 'fail');
       for (var i = 0; i < 5; i++) {
-        await queue.enqueueOrSend(PlausibleEvent(
-            name: 'e$i', url: 'https://d.example.com/x'));
+        await queue.enqueueOrSend(
+          PlausibleEvent(name: 'e$i', url: 'https://d.example.com/x'),
+        );
       }
       // maxQueueSize is 3, so only the last 3 survive.
       expect(box.length, 3);
       final names = box.values
-          .map((s) =>
-              PlausibleEvent.fromJson(jsonDecode(s) as Map<String, dynamic>)
-                  .name)
+          .map(
+            (s) => PlausibleEvent.fromJson(
+              jsonDecode(s) as Map<String, dynamic>,
+            ).name,
+          )
           .toList();
       expect(names, ['e2', 'e3', 'e4']);
     });
 
     test('drain flushes queued events once the server recovers', () async {
       adapter.responder = (_) => _resp(500, 'fail');
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'pageview', url: 'https://d.example.com/x'));
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'pageview', url: 'https://d.example.com/y'));
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'),
+      );
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/y'),
+      );
       expect(box.length, 2);
 
       adapter.responder = (_) => _resp(202, 'ok');
@@ -154,10 +162,12 @@ void main() {
     test('drain stops at first transient failure and resumes later', () async {
       // First two persist while server is down.
       adapter.responder = (_) => _resp(500, 'fail');
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'a', url: 'https://d.example.com/x'));
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'b', url: 'https://d.example.com/x'));
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'a', url: 'https://d.example.com/x'),
+      );
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'b', url: 'https://d.example.com/x'),
+      );
 
       // Server recovers for one event, then fails again.
       var calls = 0;
@@ -175,8 +185,7 @@ void main() {
       expect(box.length, 0);
     });
 
-    test('corrupt entries are dropped instead of blocking the queue',
-        () async {
+    test('corrupt entries are dropped instead of blocking the queue', () async {
       await box.add('not a json blob');
       adapter.responder = (_) => _resp(202, 'ok');
       await queue.drain();
@@ -185,8 +194,9 @@ void main() {
 
     test('connectivity change triggers a drain', () async {
       adapter.responder = (_) => _resp(500, 'fail');
-      await queue.enqueueOrSend(PlausibleEvent(
-          name: 'pageview', url: 'https://d.example.com/x'));
+      await queue.enqueueOrSend(
+        PlausibleEvent(name: 'pageview', url: 'https://d.example.com/x'),
+      );
       expect(box.length, 1);
 
       adapter.responder = (_) => _resp(202, 'ok');
@@ -206,16 +216,15 @@ void main() {
 }
 
 class _StubAdapter implements HttpClientAdapter {
-  ResponseBody Function(RequestOptions options) responder =
-      (_) => _resp(200, 'ok');
+  ResponseBody Function(RequestOptions options) responder = (_) =>
+      _resp(200, 'ok');
 
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
-  ) async =>
-      responder(options);
+  ) async => responder(options);
 
   @override
   void close({bool force = false}) {}

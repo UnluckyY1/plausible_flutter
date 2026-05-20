@@ -16,14 +16,15 @@ class PlausibleLogger {
   final Logger _logger;
 
   PlausibleLogger({this.enabled = false, Logger? logger})
-      : _logger = logger ??
-            Logger(
-              printer: SimplePrinter(printTime: false, colors: true),
-              // When the consumer doesn't inject their own Logger, gate output
-              // on the package's `enabled` flag via Level.off — keeps release
-              // builds silent unless the consumer explicitly wires logging.
-              level: enabled ? Level.debug : Level.off,
-            );
+    : _logger =
+          logger ??
+          Logger(
+            printer: SimplePrinter(printTime: false, colors: true),
+            // When the consumer doesn't inject their own Logger, gate output
+            // on the package's `enabled` flag via Level.off — keeps release
+            // builds silent unless the consumer explicitly wires logging.
+            level: enabled ? Level.debug : Level.off,
+          );
 
   void debug(String message) => _logger.d('[plausible] $message');
 
