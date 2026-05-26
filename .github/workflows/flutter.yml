@@ -33,3 +33,9 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+      - name: Pana score (informational)
+        continue-on-error: true
+        run: |
+          dart pub global activate pana
+          dart pub global run pana --no-warning
