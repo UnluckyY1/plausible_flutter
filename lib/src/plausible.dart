@@ -1,8 +1,8 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:logger/logger.dart';
-import 'package:meta/meta.dart';
 
 import 'platform_info.dart';
 import 'plausible_client.dart';
@@ -145,6 +145,7 @@ class Plausible {
     Duration timeout = const Duration(seconds: 10),
     int maxQueueSize = 1000,
     Duration retryInterval = const Duration(minutes: 5),
+    List<int>? encryptionKey,
     Dio? dio,
     Logger? logger,
     @visibleForTesting bool skipPlatformDetection = false,
@@ -154,6 +155,16 @@ class Plausible {
     if (_instance != null) {
       _instance!._logger.warn('init() called more than once — ignoring');
       return _instance!;
+    }
+
+    final normalizedApiHost = apiHost.replaceAll(RegExp(r'/+$'), '');
+    _validateApiHost(normalizedApiHost);
+    if (encryptionKey != null && encryptionKey.length != 32) {
+      throw ArgumentError.value(
+        encryptionKey.length,
+        'encryptionKey.length',
+        'must be exactly 32 bytes (AES-256)',
+      );
     }
 
     final detected = skipPlatformDetection
@@ -166,7 +177,7 @@ class Plausible {
 
     final config = PlausibleConfig(
       domain: domain,
-      apiHost: apiHost.replaceAll(RegExp(r'/+$'), ''),
+      apiHost: normalizedApiHost,
       userAgent: userAgent ?? detected.userAgent,
       defaultProps: Map.unmodifiable(mergedProps),
       xForwardedFor: xForwardedFor,
@@ -177,6 +188,13 @@ class Plausible {
       maxQueueSize: maxQueueSize,
     );
     final plausibleLogger = PlausibleLogger(enabled: debug, logger: logger);
+    if (Uri.parse(normalizedApiHost).scheme == 'http') {
+      const msg =
+          'apiHost uses http:// — analytics traffic will be sent in '
+          'cleartext. Use https:// in production.';
+      plausibleLogger.warn(msg);
+      debugPrint('[plausible_flutter] WARNING: $msg');
+    }
     final client = PlausibleClient(
       config: config,
       logger: plausibleLogger,
@@ -189,6 +207,9 @@ class Plausible {
       openBox: boxOpener,
       connectivity: connectivity,
       retryInterval: retryInterval,
+      encryptionCipher: encryptionKey == null
+          ? null
+          : HiveAesCipher(encryptionKey),
     );
     await queue.init();
     final plausible = Plausible._internal(
@@ -199,6 +220,19 @@ class Plausible {
     _instance = plausible;
     plausibleLogger.info('initialized for ${config.domain}');
     return plausible;
+  }
+
+  static void _validateApiHost(String apiHost) {
+    final uri = Uri.tryParse(apiHost);
+    if (uri == null ||
+        !uri.hasAuthority ||
+        (uri.scheme != 'http' && uri.scheme != 'https')) {
+      throw ArgumentError.value(
+        apiHost,
+        'apiHost',
+        'must be a valid http(s) URL (e.g. https://plausible.io)',
+      );
+    }
   }
 
   static Future<PlausiblePlatformInfo> _safeDetect({

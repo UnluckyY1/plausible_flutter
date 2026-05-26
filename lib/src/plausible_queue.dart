@@ -21,9 +21,9 @@ const int _maxOpenFailures = 3;
 /// a fake to avoid hitting `path_provider`.
 typedef PlausibleBoxOpener = Future<Box<String>> Function();
 
-Future<Box<String>> _defaultOpenBox() async {
+Future<Box<String>> _defaultOpenBox({HiveCipher? encryptionCipher}) async {
   await Hive.initFlutter('plausible_flutter');
-  return Hive.openBox<String>(_boxName);
+  return Hive.openBox<String>(_boxName, encryptionCipher: encryptionCipher);
 }
 
 /// Persists events that failed to send and retries them when connectivity
@@ -63,12 +63,15 @@ class PlausibleQueue with WidgetsBindingObserver {
     required PlausibleLogger logger,
     Connectivity? connectivity,
     PlausibleBoxOpener? openBox,
+    HiveCipher? encryptionCipher,
     Duration retryInterval = const Duration(minutes: 5),
   }) : _config = config,
        _client = client,
        _logger = logger,
        _connectivity = connectivity ?? Connectivity(),
-       _openBox = openBox ?? _defaultOpenBox,
+       _openBox =
+           openBox ??
+           (() => _defaultOpenBox(encryptionCipher: encryptionCipher)),
        _retryInterval = retryInterval;
 
   Future<void> init() async {
