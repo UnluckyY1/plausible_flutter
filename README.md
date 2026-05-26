@@ -246,6 +246,36 @@ The package never sends the user's IP unless you explicitly pass
 API endpoint itself is unauthenticated (same as the JS tracker) — there's
 no API key to leak.
 
+**Consent is on you.** This package will happily collect and send analytics
+the moment `init()` returns. If you operate under GDPR / CCPA or similar,
+gate `init()` (or use `setEnabled(false)` then flip on after consent) until
+the user agrees.
+
+**Don't put PII in event names, paths, or props.** Anything you pass to
+`trackEvent` / `trackPageView` ends up both on the Plausible server and in
+the local Hive queue. Email addresses, names, tokens, and user-typed search
+strings should never be event identifiers.
+
+**Use `https://` for `apiHost` in production.** The SDK accepts `http://`
+(useful for local dev), but it will log a warning — analytics traffic and
+your `X-Forwarded-For` header travel in cleartext on plain HTTP.
+
+**Encrypting the on-disk queue.** The offline queue persists pending events
+to a local Hive box in plaintext by default. Pass a 32-byte
+`encryptionKey` to `Plausible.init` to enable AES-256 at-rest encryption:
+
+```dart
+await Plausible.init(
+  domain: 'yourapp.com',
+  apiHost: 'https://plausible.io',
+  encryptionKey: yourKey, // 32 bytes, e.g. from flutter_secure_storage
+);
+```
+
+Key management is the integrator's responsibility — typically store a
+generated key in `flutter_secure_storage` (iOS Keychain / Android
+Keystore-backed) and read it before calling `init`.
+
 ## Configuration reference
 
 | Parameter                | Default        | Notes                                                              |
@@ -262,6 +292,7 @@ no API key to leak.
 | `timeout`                | `10s`          | Per-request send/receive timeout. (Caveat: when you inject your own Dio, `connectTimeout` lives only on `BaseOptions` — set it there.) |
 | `maxQueueSize`           | `1000`         | FIFO eviction beyond this.                                         |
 | `retryInterval`          | `5m`           | Periodic drain attempt. `Duration.zero` disables the timer.        |
+| `encryptionKey`          | `null`         | 32-byte AES-256 key for the on-disk queue. `null` = plaintext.     |
 | `dio`                    | native adapter | Inject your own `Dio` (mock adapter for tests, custom interceptors, etc.). |
 | `logger`                 | internal       | Inject a `package:logger` `Logger` to route logs into your stack.  |
 
